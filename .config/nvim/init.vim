@@ -60,13 +60,19 @@ nnoremap <Leader>gt :FzfRg<CR>
 "   Example: :Rg myterm -g '*.md'
 command! -bang -nargs=* Rg call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case " . <q-args>, 1, <bang>0)
 
-" #RIPGREP {{{
+" .............................................................................
+" #RIPGREP
+" .............................................................................
+" {{{
 if executable("rg")
     set grepprg=rg\ --vimgrep\ --no-heading
     set grepformat=%f:%l:%c:%m,%f:%l:%m
 endif
 " }}}
 
+" .............................................................................
+" NERDTree
+" .............................................................................
 " Open nerd tree at the current file or close nerd tree if pressed again.
 nnoremap <silent> <expr> <Leader>n g:NERDTree.IsOpen() ? "\:NERDTreeClose<CR>" : bufexists(expand('%')) ? "\:NERDTreeFind<CR>" : "\:NERDTree<CR>"
 " NERDTree: Bind nerdtree sidebar appear command to CTRL-n
@@ -120,38 +126,106 @@ xmap <Leader>R
 set guifont=Hack\ Nerd\ Font\:h11
 set encoding=utf-8
 let g:yats_host_keyword = 1
-" Ale:
-" let g:ale_linter_aliases = {'typescriptreact': 'typescript'}
-" let g:ale_linters = {
-"  \ 'typescript': ['tslint'],
-"  \ 'typescriptreact': ['tslint'],
-"  \ 'javascript': ['prettier', 'eslint'],
-"  \ }
-" let g:ale_fixers = {
-"  \ 'typescriptreact': ['tslint'],
-"  \ 'typescript': ['tslint'],
-"  \ 'javascript': ['prettier', 'eslint'],
-"  \ }
-"
-" nmap <silent> <C-f> <Plug>(ale_fix)
-" let g:ale_typescript_tslint_ignore_empty_files = 0
-" let g:ale_linters_explicit = 1
-" let g:ale_virtualtext_cursor = 1
-" let g:ale_javascript_prettier_use_local_config = 1
-" let g:ale_sign_error = '❌'
-" let g:ale_sign_warning = '⚠️'
-" let g:ale_set_loclist = 0
-" let g:ale_set_quickfix = 1
-" let g:ale_fix_on_save = 0
-" let g:ale_completion_enabled = 1
-" let g:ale_echo_msg_error_str = 'E'
-" let g:ale_echo_msg_warning_str = 'W'
-" let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
-" set completeopt=menu,menuone,preview,noselect,noinsert
 
-" Coc setup from guide
+" .............................................................................
+" Coc
+" .............................................................................
 " if hidden is not set, TextEdit might fail.
 set hidden
+
+" vim-prettier
+"let g:prettier#quickfix_enabled = 0
+"let g:prettier#quickfix_auto_focus = 0
+" prettier command for coc
+command! -nargs=0 Prettier :CocCommand prettier.formatFile
+
+let g:coc_global_extensions = [
+\ 'coc-snippets',
+\ 'coc-pairs',
+\ 'coc-tsserver',
+\ 'coc-eslint',
+\ 'coc-prettier',
+\ 'coc-json',
+\ ]
+
+" Use `[g` and `]g` to navigate diagnostics
+nmap <silent> [g <Plug>(coc-diagnostic-prev)
+nmap <silent> ]g <Plug>(coc-diagnostic-next)
+" Remap keys for gotos
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gy <Plug>(coc-type-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gr <Plug>(coc-references)
+
+" Use K to show documentation in preview window
+nnoremap <silent> K :call <SID>show_documentation()<CR>
+
+function! s:show_documentation()
+if (index(['vim','help'], &filetype) >= 0)
+execute 'h '.expand('<cword>')
+else
+call CocAction('doHover')
+endif
+endfunction
+
+" Highlight symbol under cursor on CursorHold
+autocmd CursorHold * silent call CocActionAsync('highlight')
+" Remap for rename current word
+nmap <F2> <Plug>(coc-rename)
+" Remap for format selected region
+xmap <leader>f  <Plug>(coc-format-selected)
+nmap <leader>f  <Plug>(coc-format-selected)
+
+augroup mygroup
+autocmd!
+  " Setup formatexpr specified filetype(s).
+autocmd FileType typescript,json setl formatexpr=CocAction('formatSelected')
+  " Update signature help on jump placeholder
+autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
+augroup end
+
+" Remap for do codeAction of selected region, ex: `<leader>aap` for current paragraph
+xmap <leader>a  <Plug>(coc-codeaction-selected)
+nmap <leader>a  <Plug>(coc-codeaction-selected)
+" Remap for do codeAction of current line
+nmap <leader>ac  <Plug>(coc-codeaction)
+" Fix autofix problem of current line
+nmap <leader>qf  <Plug>(coc-fix-current)
+" Create mappings for function text object, requires document symbols feature of languageserver.
+xmap if <Plug>(coc-funcobj-i)
+xmap af <Plug>(coc-funcobj-a)
+omap if <Plug>(coc-funcobj-i)
+omap af <Plug>(coc-funcobj-a)
+" Use <C-d> for select selections ranges, needs server support, like: coc-tsserver, coc-python
+nmap <silent> <C-d> <Plug>(coc-range-select)
+xmap <silent> <C-d> <Plug>(coc-range-select)
+
+" Use `:Format` to format current buffer
+command! -nargs=0 Format :call CocAction('format')
+" Use `:Fold` to fold current buffer
+command! -nargs=? Fold :call     CocAction('fold', <f-args>)
+" use `:OR` for organize import of current buffer
+command! -nargs=0 OR   :call     CocAction('runCommand', 'editor.action.organizeImport')
+" Add status line support, for integration with other plugin, checkout `:h coc-status`
+set statusline^=%{coc#status()}%{get(b:,'coc_current_function','')}
+
+" Using CocList
+" Show all diagnostics
+nnoremap <silent> <space>a  :<C-u>CocList diagnostics<cr>
+" Manage extensions
+nnoremap <silent> <space>e  :<C-u>CocList extensions<cr>
+" Show commands
+nnoremap <silent> <space>c  :<C-u>CocList commands<cr>
+" Find symbol of current document
+nnoremap <silent> <space>o  :<C-u>CocList outline<cr>
+" Search workspace symbols
+nnoremap <silent> <space>s  :<C-u>CocList -I symbols<cr>
+" Do default action for next item.
+nnoremap <silent> <space>j  :<C-u>CocNext<CR>
+" Do default action for previous item.
+nnoremap <silent> <space>k  :<C-u>CocPrev<CR>
+" Resume latest coc list
+nnoremap <silent> <space>p  :<C-u>CocListResume<CR>
 
 " Some servers have issues with backup files, see #649
 set nobackup
@@ -271,7 +345,9 @@ nnoremap <silent> <space>k  :<C-u>CocPrev<CR>
 " Resume latest coc list
 nnoremap <silent> <space>p  :<C-u>CocListResume<CR>
 
-" Airline:
+" .............................................................................
+" Airline
+" .............................................................................
 let g:airline_highlighting_cache=1
 let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#left_sep = ' '
@@ -290,7 +366,9 @@ syntax on
 let g:dracula_colorterm = 0
 color dracula
 
+" .............................................................................
 " Goyo
+" .............................................................................
 nnoremap <silent> <C-Q> :Goyo 50%x100%<CR>
 
 " Navigate around splits with a single key combo.
